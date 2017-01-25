@@ -1,0 +1,195 @@
+<?php
+
+/**
+ * @file
+ * Defines custom functionality for NATA's specific CiviCRM integration
+ */
+
+/**
+ * Implements hook_menu().
+ *
+ * Provides module settings form at 'admin/config/batch-callback'
+ */
+function batch_callback_menu() {
+  $items = array();
+
+  $items['admin/config/batch-callback'] = array(
+    'title' => 'Batch Callback Settings',
+    'description' => 'Configure settings pertinent to the batch_callback module.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('batch_callback_settings_form'),
+    'access arguments' => array('configure batch_callback'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'forms/batch_callback.admin.inc',
+  );
+  $items['admin/config/batch-callback/process'] = array(
+    'title' => 'Batch Callback Process',
+    'description' => 'Run the batch_callback process.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('batch_callback_run_batch_process'),
+    'access arguments' => array('run batch_callback'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'forms/batch_callback.batch.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ *
+ * Provides 'Configure CiviCRM Customs settings' permission
+ */
+function batch_callback_permission() {
+  $permissions = array(
+    'configure batch_callback' => array(
+      'title' => t('Configure Batch Callback settings'),
+      'description' => t('Allows users to configure the batch_callback.'),
+    ),
+    'run batch_callback' => array(
+      'title' => t('Run the Batch Callback process'),
+      'description' => t('Allows users to run the batch_callback.'),
+      'restricted' => TRUE,
+    ),
+  );
+
+  return $permissions;
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function batch_callback_views_api() {
+  return array(
+      'api' => 3,
+      'path' => drupal_get_path('module', 'batch_callback') . '/views',
+  );
+}
+
+function batch_callback_views_data(){
+  $data =array();
+  // column name => type
+  $log_fields = array(
+    'id'  => 'int',
+    'timestamp' => 'date',
+    'uid' => 'user',
+    'pid' => 'int',
+    'contact_id' => 'int',
+    'contact_updated' => 'int',
+    'first_name' => 'text',
+    'last_name' => 'text',
+  );
+
+  $data['batch_callback_log']['table']['group'] = t('Batch Callback Log');
+  $data['batch_callback_log']['table']['base'] = array(
+    'field' => 'id', //primary key
+    'title' => t('Batch Callback Log'),
+    'help' => t('Table contains the batch_callback_log results'),
+    'weight' => -10,
+  );
+
+  foreach ($log_fields as $column => $type) {
+    $data['batch_callback_log'][$column] = array(
+      'title' => $column,
+    );
+
+    switch ($type) {
+      case 'int':
+        $data['batch_callback_log'][$column]['field'] = array('handler' => 'views_handler_field_numeric');
+        $data['batch_callback_log'][$column]['filter'] = array('handler' => 'views_handler_filter_numeric');
+        $data['batch_callback_log'][$column]['argument'] = array('handler' => 'views_handler_argument_numeric');
+        $data['batch_callback_log'][$column]['sort'] = array('handler' => 'views_handler_sort');
+        break;
+      case 'text':
+        $data['batch_callback_log'][$column]['field'] = array('handler' => 'views_handler_field');
+        $data['batch_callback_log'][$column]['filter'] = array('handler' => 'views_handler_filter_string');
+        $data['batch_callback_log'][$column]['argument'] = array('handler' => 'views_handler_argument_string');
+        $data['batch_callback_log'][$column]['sort'] = array('handler' => 'views_handler_sort');
+        break;
+      case 'date':
+        $data['batch_callback_log'][$column]['field'] = array('handler' => 'views_handler_field_date');
+        $data['batch_callback_log'][$column]['filter'] = array('handler' => 'views_handler_filter_date');
+        $data['batch_callback_log'][$column]['argument'] = array('handler' => 'views_handler_argument_date');
+        $data['batch_callback_log'][$column]['sort'] = array('handler' => 'views_handler_sort_date');
+        break;
+      case 'user':
+        $data['batch_callback_log'][$column]['field'] = array('handler' => 'views_handler_field_user');
+        $data['batch_callback_log'][$column]['filter'] = array('handler' => 'views_handler_filter_user_name');
+        $data['batch_callback_log'][$column]['argument'] = array('handler' => 'views_handler_argument_user_uid');
+        $data['batch_callback_log'][$column]['sort'] = array('handler' => 'views_handler_sort');
+        $data['batch_callback_log'][$column]['real_field'] = 'uid';
+        $data['batch_callback_log'][$column]['relationship'] = array(
+          'base' => 'users',
+          'base field' => 'uid',
+          'relationship field' => 'uid',
+          'handler' => 'views_handler_relationship',
+          'label' => t('Log Entry related User'),
+        );
+        break;
+      default:
+        $data['batch_callback_log'][$column]['field'] = array('handler' => 'views_handler_field');
+        $data['batch_callback_log'][$column]['filter'] = array('handler' => 'views_handler_filter');
+        $data['batch_callback_log'][$column]['argument'] = array('handler' => 'views_handler_argument');
+        $data['batch_callback_log'][$column]['sort'] = array('handler' => 'views_handler_sort');
+        break;
+    }
+
+  }
+
+ return $data;
+}
+
+/**
+ * The callback function that does the individual unit action
+ *
+ * @param $uid
+ * @param $context
+ */
+function _batch_callback_batch_process_callback($form_values, $uid, &$context) {
+  //grab global setting example
+  $some_global_setting = variable_get('batch_callback_some_global_setting', '');
+
+  // update indexes for the log values you are logging
+  $log = array();
+  $log['uid'] = $uid;
+  $log['contact_updated'] = 0;
+  $log['first_name'] = '';
+  $log['last_name'] = '';
+  $log['pid'] = 0;
+
+  //do some stuff
+
+  //if all the api calls go through set $is_error = 0;
+  $is_error = 0;
+
+  // make a log entry
+  _batch_callback_create_log_entry($log);
+
+  if ($is_error) {
+    $context['results'][] = 'Error updating record: '  . ' : ' . '';
+  }
+  else {
+    $context['results'][] = 'Updated record: '  . ' : ' . $uid;
+  }
+
+
+}
+
+/**
+ * Creates an entry in the log
+ *
+ * @param $log
+ */
+function _batch_callback_create_log_entry($log) {
+  // update indexes for the log values you are logging
+  $id = db_insert('batch_callback_log')
+    ->fields(array(
+      'timestamp' => REQUEST_TIME,
+      'uid' => $log['uid'],
+      'contact_updated' => $log['contact_updated'],
+      'first_name' => $log['first_name'],
+      'last_name' => $log['last_name'],
+      'pid' => $log['pid'],
+    ))
+    ->execute();
+}

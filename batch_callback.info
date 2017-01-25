@@ -1,0 +1,13 @@
+name = Batch Callback
+description = Custom batch process initiated from a custom menu item, doing some arbitrary callback
+core = 7.x
+package = Custom
+version = "7.x-1.0"
+
+
+
+dependencies[] = civicrm
+dependencies[] = views
+
+#files[] =
+

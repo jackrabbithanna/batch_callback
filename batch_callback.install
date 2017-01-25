@@ -1,0 +1,93 @@
+<?php
+
+/**
+ * Implememts hook_install()
+ */
+function batch_callback_install() {
+  db_update('system')
+    ->fields(array('weight' => 100))
+    ->condition('type', 'module')
+    ->condition('name', 'batch_callback')
+    ->execute();
+
+
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function batch_callback_uninstall() {
+  
+}
+
+/**
+ * Implements hook_enable()
+ */
+function batch_callback_enable() {
+    db_update('system')
+    ->fields(array('weight' => 100))
+    ->condition('type', 'module')
+    ->condition('name', 'batch_callback')
+    ->execute();
+}
+
+/**
+ * Implements hook_schema().
+ */
+function batch_callback_schema() {
+  $schema['batch_callback_log'] = array(
+    'description' => t('Batch Callback Log'),
+    'fields' => array(
+      'id' => array(
+        'description' => 'Primary identifier',
+        'type' => 'serial',   //type = 'serial' 1st time
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        ),
+      'timestamp' => array(
+        'description' => 'Unix timestamp for when the log entry was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        ),
+      'uid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t('The {user}.uid of the user which was updated.'),
+      ),
+      'pid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t('The profile id of the user which was updated.'),
+      ),
+      'contact_id' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t('The contact id of the user which was updated.'),
+      ),
+      'contact_updated' => array(
+        'description' => 'Contact updated flag',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        ),
+      'first_name' => array(
+        'description' => 'First name parsed from real name field.',
+        'type' => 'varchar',
+        'length' => 255,
+        'default' => '',
+      ),
+      'last_name' => array(
+        'description' => 'Last name parsed from real name field.',
+        'type' => 'varchar',
+        'length' => 255,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('id'), //this is last element of array
+  );
+  return $schema;
+}
